@@ -1,4 +1,6 @@
-﻿namespace BankProject
+﻿using System.Text.RegularExpressions;
+
+namespace BankProject
 {
     /// <summary>
     /// Bank műveleteit végrehajtó osztály.
@@ -49,7 +51,12 @@
 		/// <exception cref="HibasSzamlaszamException">A megadott számlaszámmal nem létezik számla</exception>
 		public ulong Egyenleg(string szamlaszam)
 		{
-			if (szamlaszam == null)
+            if (!Regex.IsMatch(szamlaszam, "^[\\d\\-\\s]*$"))
+            {
+                throw new ArgumentException(nameof(szamlaszam), "A számlaszám csak számot, szóközt és kötőjelet tartalmazhat.");
+            }
+
+            if (szamlaszam == null)
 			{
 				throw new ArgumentNullException(nameof(szamlaszam), "A számlaszám nem lehet null");
 			}
@@ -65,18 +72,31 @@
 		}
 
 
-		/// <summary>
-		/// Egy létező számlára pénzt helyez
-		/// </summary>
-		/// <param name="szamlaszam">A számla számlaszáma, amire pénzt helyez</param>
-		/// <param name="osszeg">A számlára helyezendő pénzösszeg</param>
-		/// <exception cref="ArgumentNullException">A számlaszám nem lehet null</exception>
-		/// <exception cref="ArgumentException">Az összeg csak pozitív lehet.
-		/// A számlaszám számot, szóközt és kötőjelet tartalmazhat</exception>
-		/// <exception cref="HibasSzamlaszamException">A megadott számlaszámmal nem létezik számla</exception>
-		public void EgyenlegFeltolt(string szamlaszam, ulong osszeg)
+        /// <summary>
+        /// Egy létező számlára pénzt helyez
+        /// </summary>
+        /// <param name="szamlaszam">A számla számlaszáma, amire pénzt helyez</param>
+        /// <param name="osszeg">A számlára helyezendő pénzösszeg</param>
+        /// <exception cref="ArgumentNullException">A számlaszám nem lehet null</exception>
+        /// <exception cref="ArgumentException">Az összeg csak pozitív lehet.
+        /// A számlaszám számot, szóközt és kötőjelet tartalmazhat</exception>
+        /// <exception cref="HibasSzamlaszamException">A megadott számlaszámmal nem létezik számla</exception>
+        public void EgyenlegFeltolt(string szamlaszam, ulong osszeg)
         {
-            throw new NotImplementedException();
+            if (szamlaszam == null)
+                throw new ArgumentNullException(nameof(szamlaszam));
+
+            if (!Regex.IsMatch(szamlaszam, "^[\\d\\-\\s]*$"))
+                throw new ArgumentException("A számlaszám csak számot, szóközt és kötőjelet tartalmazhat.", nameof(szamlaszam));
+
+            if (osszeg == 0)
+                throw new ArgumentException("Az összeg nem lehet 0.", nameof(osszeg));
+
+            var szamla = szamlak.FirstOrDefault(s => s.Szamlaszam == szamlaszam);
+            if (szamla == null)
+                throw new HibasSzamlaszamException("A megadott számlaszámmal nem létezik számla");
+
+            szamla.Egyenleg += osszeg;
         }
 
         /// <summary>
@@ -93,7 +113,31 @@
         /// <exception cref="HibasSzamlaszamException">A megadott számlaszámmal nem létezik számla</exception>
         public bool Utal(string honnan, string hova, ulong osszeg)
         {
-            throw new NotImplementedException();
+            if (honnan == null)
+                throw new ArgumentNullException(nameof(honnan));
+
+            if (hova == null)
+                throw new ArgumentNullException(nameof(hova));
+
+            if (!Regex.IsMatch(honnan, "^[\\d\\-\\s]*$") || !Regex.IsMatch(hova, "^[\\d\\-\\s]*$"))
+                throw new ArgumentException("A számlaszám csak számot, szóközt és kötőjelet tartalmazhat.");
+
+            if (osszeg == 0)
+                throw new ArgumentException("Az összeg nem lehet 0.", nameof(osszeg));
+
+            var from = szamlak.FirstOrDefault(s => s.Szamlaszam == honnan);
+            var to = szamlak.FirstOrDefault(s => s.Szamlaszam == hova);
+
+            if (from == null || to == null)
+                throw new HibasSzamlaszamException("A forrás vagy cél számlaszám nem létezik");
+
+            if (from.Egyenleg < osszeg)
+                return false;
+
+            from.Egyenleg -= osszeg;
+            to.Egyenleg += osszeg;
+
+            return true;
         }
 
         private class Szamla 

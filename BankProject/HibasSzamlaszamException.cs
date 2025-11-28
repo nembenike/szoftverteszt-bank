@@ -9,7 +9,7 @@ namespace BankProject
     /// <summary>
     /// Nem létező számla esetén dobhatjuk bármely függvényből
     /// </summary>
-    public class HibasSzamlaszamException : Exception
+    public class HibasSzamlaszamException : ArgumentException
     {
         /// <summary>
         /// Létrehozza a kivételt, amely Hibás számlaszám üzenetet fogja kiírni a megadott számlaszámmal
